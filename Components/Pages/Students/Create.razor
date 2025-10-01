@@ -1,0 +1,31 @@
+﻿@page "/students/create"
+@inject IStudentService StudentService
+@inject NavigationManager Nav
+@using studentManagementSystem.Models.DTOs
+@using studentManagementSystem.Components
+@using studentManagementSystem.Services
+@rendermode InteractiveServer
+
+<PageTitle>Create Student</PageTitle>
+<h3>Create Student</h3>
+
+<StudentForm Student="@student" OnSubmit="@HandleSubmit" />
+
+@code {
+    private StudentDto student = new();
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            await StudentService.AddAsync(student);
+            // Ensure UI refreshes by resetting the DTO
+            student = new();
+        }
+        catch (Exception ex)
+        {
+            // Let StudentForm handle the error display
+            throw;
+        }
+    }
+}

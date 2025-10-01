@@ -1,0 +1,44 @@
+﻿@page "/students/edit/{id:int}"
+@inject IStudentService StudentService
+@inject NavigationManager Nav
+@using studentManagementSystem.Models.DTOs
+@using studentManagementSystem.Components
+@using studentManagementSystem.Services
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>Edit Student</PageTitle>
+<h3>Edit Student</h3>
+
+@if (student == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <StudentForm Student="@student" OnSubmit="@HandleSubmit" />
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; } 
+
+    private StudentDto? student;
+
+    protected override async Task OnInitializedAsync()
+    {
+        student = await StudentService.GetByIdAsync(Id);
+        if ( student == null)
+        {
+            NavigationManager.NavigateTo("/students");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (student != null)
+        {
+            await StudentService.UpdateAsync(student);
+        }
+    }
+}

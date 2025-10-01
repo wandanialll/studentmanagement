@@ -1,0 +1,64 @@
+﻿@page "/courses"
+@using studentManagementSystem.Models.DTOs
+@using studentManagementSystem.Services
+@inject ICourseService CourseService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>Courses</PageTitle>
+
+@* <SearchComponent SearchTerm="@searchTerm" OnSearch="@(e => searchTerm = e.Value)" /> *@
+
+<a href="/courses/create" class="btn btn-sm text rounded-0 bg-success text-bg-success mb-2">Add New Course</a>
+<table class="table table-striped table-dark">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Credits</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var course in FilteredCourses)
+        {
+            <tr>
+                <td>@course.Title</td>
+                <td>@course.Credits</td>
+                <td>
+                    <a href="/courses/details/@course.CourseId" class="btn btn-sm bg-white rounded-0">Details</a>
+                    <a href="/courses/edit/@course.CourseId" class="btn btn-sm bg-danger-subtle rounded-0">Edit</a>
+                    <button @onclick="() => Delete(course.CourseId)" class="btn btn-sm bg-danger rounded-0">Delete</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@code {
+    private List<CourseDto> Courses = new();
+    private string searchTerm = string.Empty;
+
+    private IEnumerable<CourseDto> FilteredCourses =>
+        string.IsNullOrEmpty(searchTerm)
+            ? Courses
+            : Courses.Where(c => c.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        Courses = (await CourseService.GetAllAsync()).ToList();
+    }
+
+    private async Task Delete(int id)
+    {
+        try
+        {
+            await CourseService.DeleteAsync(id);
+            Courses.RemoveAll(c => c.CourseId == id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+}

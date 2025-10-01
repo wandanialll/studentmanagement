@@ -1,0 +1,41 @@
+﻿@page "/courses/edit/{id:int}"
+@using studentManagementSystem.Services
+@using studentManagementSystem.Models.DTOs
+@inject ICourseService CourseService
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+
+<PageTitle>Edit Course</PageTitle>
+<h3>Edit Course</h3>
+
+@if (course == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <CourseForm Course="@course" OnSubmit="@HandleSubmit" />
+
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private CourseDto? course;
+
+    protected override async Task OnInitializedAsync()
+    {
+        course = await CourseService.GetByIdAsync(Id);
+        if (course == null)
+        {
+            NavigationManager.NavigateTo("/courses");
+        }
+    }
+
+    private async Task HandleSubmit(CourseDto updatedCourse)
+    {
+        Console.WriteLine($"Updating - Title: {updatedCourse.Title}, Credits: {updatedCourse.Credits}");
+        await CourseService.UpdateAsync(updatedCourse);
+    }
+}

@@ -1,0 +1,97 @@
+﻿@page "/enrollments"
+@using studentManagementSystem.Services
+@inject IStudentService StudentService
+@inject NavigationManager Nav
+@using studentManagementSystem.Models.DTOs
+@using static DebugConstants
+@rendermode InteractiveServer
+
+<PageTitle>Enrollments</PageTitle>
+
+<a href="/enrollments/manage" class="btn btn-sm text rounded-0 bg-success text-bg-success mb-2">Add Enrollment</a>
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+else if (enrollments == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!enrollments.Any())
+{
+    <p>No enrollments found.</p>
+}
+else
+{
+    <table class="table table-striped table-dark">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Grade</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var enrollment in enrollments)
+            {
+                <tr>
+                    <td>@enrollment.StudentName</td>
+                    <td>@enrollment.CourseTitle</td>
+                    <td>@(enrollment.Mark?.ToString() ?? "Not graded")</td>
+                    <td>
+                        <button class="btn btn-sm bg-danger-subtle rounded-0" @onclick="@(() => Nav.NavigateTo($"/enrollments/edit/{enrollment.StudentId}/{enrollment.CourseId}"))">Edit</button>
+                        <button class="btn btn-sm bg-danger rounded-0" @onclick="@(() => DeleteEnrollment(enrollment.StudentId, enrollment.CourseId))">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    private List<EnrollmentDto>? enrollments;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var students = await StudentService.GetAllWithEnrollmentsAsync();
+            enrollments = students.SelectMany(s => s.StudentCourses.Select(sc => new EnrollmentDto
+            {
+                StudentId = sc.StudentId,
+                CourseId = sc.CourseId,
+                Mark = sc.Mark,
+                StudentName = s.Name,
+                CourseTitle = sc.Course?.Title
+            })).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = DebugConstants.DatabaseError;
+            Console.WriteLine($"Error loading enrollments: {ex}");
+        }
+    }
+
+    private async Task DeleteEnrollment(int studentId, int courseId)
+    {
+        try
+        {
+            await StudentService.DeleteEnrollmentAsync(studentId, courseId);
+            enrollments = enrollments?.Where(e => e.StudentId != studentId || e.CourseId != courseId).ToList();
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = DebugConstants.DatabaseError;
+            Console.WriteLine($"Error deleting enrollment: {ex}");
+        }
+    }
+}

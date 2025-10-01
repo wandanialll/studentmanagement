@@ -1,0 +1,17 @@
+﻿@page "/courses/create"
+@using studentManagementSystem.Services
+@using studentManagementSystem.Models.DTOs
+@inject ICourseService CourseService
+@rendermode InteractiveServer
+
+<PageTitle>Create Course</PageTitle>
+<h3>Create Course</h3>
+
+<CourseForm OnSubmit="@HandleSubmit" />
+
+@code {
+    private async Task HandleSubmit(CourseDto course)
+    {
+        await CourseService.AddAsync(course);
+    }
+}

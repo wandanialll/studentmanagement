@@ -1,0 +1,93 @@
+﻿@using studentManagementSystem.Services
+
+@page "/enrollments/edit/{studentId:int}/{courseId:int}"
+@inject IStudentService StudentService
+@inject NavigationManager Nav
+@using studentManagementSystem.Models.DTOs
+@rendermode InteractiveServer
+
+<PageTitle>Edit Enrollment</PageTitle>
+<h3>Edit Enrollment</h3>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+else if (enrollment == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <EditForm Model="@enrollment" OnValidSubmit="@HandleSubmit">
+        <DataAnnotationsValidator />
+        <div class="mb-3">
+            <label class="form-label">Student</label>
+            <p>@enrollment.StudentName</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Course</label>
+            <p>@enrollment.CourseTitle</p>
+        </div>
+        <div class="mb-3">
+            <label for="grade" class="form-label">Grade (optional)</label>
+            <InputNumber id="grade" class="form-control" @bind-Value="@enrollment.Mark" />
+            <ValidationMessage For="@(() => enrollment.Mark)" />
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int studentId { get; set; }
+    [Parameter]
+    public int courseId { get; set; }
+
+    private EnrollmentDto? enrollment;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            enrollment = await StudentService.GetEnrollmentByIdAsync(studentId, courseId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = DebugConstants.DatabaseError;
+            Console.WriteLine($"Error loading enrollment: {ex}");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            errorMessage = null;
+            await StudentService.EditEnrollmentAsync(enrollment!);
+            Nav.NavigateTo("/enrollments");
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = DebugConstants.DatabaseError;
+            Console.WriteLine($"Error updating enrollment: {ex}");
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/enrollments");
+    }
+}

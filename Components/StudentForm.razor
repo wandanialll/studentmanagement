@@ -1,0 +1,62 @@
+﻿@inject IStudentService StudentService
+@inject NavigationManager NavigationManager
+@using studentManagementSystem.Services
+@using studentManagementSystem.Models.DTOs
+
+@rendermode InteractiveServer
+
+<EditForm Model="@Student" OnValidSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @errorMessage
+        </div>
+    }
+    <div class="mb-3">
+        <label for="name" class="form-label">Name</label>
+        <InputText id="name" class="form-control" @bind-Value="@Student.Name" />
+        <ValidationMessage For="@(() => Student.Name)" />
+    </div>
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <InputText id="email" class="form-control" @bind-Value="@Student.Email" />
+        <ValidationMessage For="@(() => Student.Email)" />
+    </div>
+    <button type="submit" class="btn text rounded-0 bg-success text-bg-success">Save</button>
+    <button type="button" class="btn text rounded-0 bg-danger" @onclick="Cancel">Cancel</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public StudentDto Student { get; set; } = new();
+
+    [Parameter]
+    public EventCallback OnSubmit { get; set; }
+
+    private string? errorMessage;
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            errorMessage = null;
+            await OnSubmit.InvokeAsync();
+            NavigationManager.NavigateTo("/students");
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message; // e.g., duplicate email
+        }
+        catch (Exception ex)
+        {
+            errorMessage = DebugConstants.DatabaseError;
+            Console.WriteLine($"Unexpected error: {ex}");
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/students");
+    }
+}

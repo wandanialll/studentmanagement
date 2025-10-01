@@ -1,0 +1,15 @@
+﻿@page "/enrollments/manage"
+
+@using studentManagementSystem.Services
+@using studentManagementSystem.Models.DTOs
+@rendermode InteractiveServer
+
+@inject IStudentService StudentService
+
+<PageTitle>Manage Enrollments</PageTitle>
+
+<EnrollmentForm Enrollment="@enrollment" />
+
+@code {
+    private EnrollmentDto enrollment = new();
+}

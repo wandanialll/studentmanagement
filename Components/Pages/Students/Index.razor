@@ -1,0 +1,68 @@
+﻿@page "/students"
+@using studentManagementSystem.Models.DTOs
+@using studentManagementSystem.Services
+@inject IStudentService StudentService
+@inject NavigationManager Nav
+@rendermode InteractiveServer
+
+@* <button class="btn btn-primary mb-2" @onclick="@(() => Nav.NavigateTo("/students/create"))">Add student</button> *@
+<a href="/students/create" class="btn btn-sm text rounded-0 bg-success text-bg-success mb-2">Add Student</a>
+
+@if (students == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (!students.Any())
+{
+    <p>No students found.</p>
+}
+else
+{
+    <table class="table table-striped table-dark">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var s in students)
+        {
+            <tr>
+                <td>@s.Name</td>
+                <td>@s.Email</td>
+                <td>
+                        @* <button class="btn btn-sm btn-info" @onclick="@(() => Nav.NavigateTo($"/students/details/{s.StudentId}"))">Details</button> *@
+                        <a href="/students/details/@s.StudentId" class="btn btn-sm bg-white rounded-0">Details</a>
+                        @* <button class="btn btn-sm btn-info" @onclick="@(() => Nav.NavigateTo($"/students/edit/{s.StudentId}"))">Edit</button> *@
+                        <a href="/students/edit/@s.StudentId" class="btn btn-sm bg-danger-subtle rounded-0">Edit</a>
+                        <button @onclick="() => Delete(s.StudentId)" class="btn btn-sm bg-danger rounded-0">Delete</button>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<StudentDto>? students;
+
+    protected override async Task OnInitializedAsync()
+    {
+        students = (await StudentService.GetAllAsync()).ToList();
+    }
+
+    private async Task Delete(int id)
+    {
+        try
+        {
+            await StudentService.DeleteAsync(id);
+            students?.RemoveAll(s => s.StudentId == id);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+}

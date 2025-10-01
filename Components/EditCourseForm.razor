@@ -1,0 +1,44 @@
+﻿@using studentManagementSystem.Models.DTOs
+@inject NavigationManager NavigationManager
+
+<EditForm Model="@Course" OnValidSubmit="@HandleSubmit" FormName="editCourseForm">
+    <DataAnnotationsValidator />
+    <div class="mb-3">
+        <label for="title" class="form-label">Title</label>
+        <InputText id="title" class="form-control" @bind-Value="@Course.Title" />
+        <ValidationMessage For="@(() => Course.Title)" />
+    </div>
+    <div class="mb-3">
+        <label for="credits" class="form-label">Credits</label>
+        <InputNumber id="credits" class="form-control" @bind-Value="@Course.Credits" />
+        <ValidationMessage For="@(() => Course.Credits)" />
+    </div>
+    <button type="submit" class="btn text rounded-0 bg-success text-bg-success">Save</button>
+    <button type="button" class="btn text rounded-0 bg-danger" @onclick="Cancel">Cancel</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public CourseDto Course { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<CourseDto> OnSubmit { get; set; }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            await OnSubmit.InvokeAsync(Course);
+            NavigationManager.NavigateTo("/courses");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/courses");
+    }
+}

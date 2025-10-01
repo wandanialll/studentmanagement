@@ -1,0 +1,106 @@
+﻿@using studentManagementSystem.Services
+@using studentManagementSystem.Models.DTOs
+@using static studentManagementSystem.DebugConstants;
+
+@inject IStudentService StudentService
+@inject ICourseService CourseService
+@inject NavigationManager NavigationManager
+
+<EditForm Model="@Enrollment" OnValidSubmit="@HandleSubmit">
+    <DataAnnotationsValidator />
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @errorMessage
+        </div>
+    }
+    <div class="mb-3">
+        <label for="student" class="form-label">Student</label>
+        <InputSelect id="student" class="form-select" @bind-Value="@Enrollment.StudentId">
+            <option value="0" disabled selected>Select a student...</option>
+            @foreach (var student in Students)
+            {
+                <option value="@student.StudentId">@student.Name</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => Enrollment.StudentId)" />
+    </div>
+    <div class="mb-3">
+        <label for="course" class="form-label">Course</label>
+        <InputSelect id="course" class="form-select" @bind-Value="@Enrollment.CourseId">
+            <option value="0" disabled selected>Select a course...</option>
+            @foreach (var course in Courses)
+            {
+                <option value="@course.CourseId">@course.Title</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => Enrollment.CourseId)" />
+    </div>
+    <div class="mb-3">
+        <label for="grade" class="form-label">Grade (optional)</label>
+        <InputNumber id="grade" class="form-control" @bind-Value="@Enrollment.Mark" />
+        <ValidationMessage For="@(() => Enrollment.Mark)" />
+    </div>
+    <div class="mb-3">
+        <p>Selected Student ID: @Enrollment.StudentId, Course ID: @Enrollment.CourseId</p>
+    </div>
+    <button type="submit" class="btn text rounded-0 bg-success text-bg-success" disabled="@(Enrollment.StudentId == 0 || Enrollment.CourseId == 0)">Enroll</button>
+    <button type="button" class="btn text rounded-0 bg-danger" @onclick="Cancel">Cancel</button>
+</EditForm>
+
+@code {
+    [Parameter]
+    public EnrollmentDto Enrollment { get; set; } = new();
+
+    private List<StudentDto> Students = new();
+    private List<CourseDto> Courses = new();
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Students = (await StudentService.GetAllAsync()).ToList();
+            Courses = (await CourseService.GetAllAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = DebugConstants.DatabaseError;
+            Console.WriteLine($"Error loading students or courses: {ex}");
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        try
+        {
+            errorMessage = null;
+            _logger.LogInformation("Submitting enrollment: StudentId={StudentId}, CourseId={CourseId}", Enrollment.StudentId, Enrollment.CourseId);
+            await StudentService.EnrollAsync(Enrollment);
+            NavigationManager.NavigateTo("/enrollments");
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message; // e.g., Student not found, Already enrolled
+            _logger.LogError("Enrollment failed: {Message}", ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            errorMessage = ex.Message; // e.g., Invalid student ID
+            _logger.LogError("Enrollment failed: {Message}", ex.Message);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = DebugConstants.DatabaseError;
+            _logger.LogError("Unexpected error during enrollment: {Message}", ex);
+        }
+    }
+
+    private void Cancel()
+    {
+        NavigationManager.NavigateTo("/enrollments");
+    }
+
+    [Inject]
+    private ILogger<EnrollmentForm> _logger { get; set; } = default!;
+}
